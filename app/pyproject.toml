@@ -1,0 +1,11 @@
+[project]
+name = "av-web-api"
+version = "0.1.0"
+description = "A FastAPI application with SQLModel and Docker"
+authors = ["Your Name <your.email@example.com>"]
+dependencies = [
+    "fastapi>=0.95.0",
+    "uvicorn[standard]>=0.22.0",
+    "sqlmodel>=0.0.8",
+    "mysql-connector-python>=8.0.0"
+]

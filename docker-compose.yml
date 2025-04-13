@@ -1,0 +1,45 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./docker/app/Dockerfile
+    volumes:
+      - /avdata/app:/app_data
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:latest
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - /avdata/mysql:/var/lib/mysql
+
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - app
+    volumes:
+      - /avdata/nginx/conf:/etc/nginx/conf.d
+      - /avdata/certbot/conf:/etc/letsencrypt
+      - /avdata/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do nginx -g \"daemon off;\"; sleep 12h && nginx -s reload; done;'"
+
+  certbot:
+    build:
+      context: ./docker/certbot
+      dockerfile: Dockerfile
+    volumes:
+      - /avdata/certbot/conf:/etc/letsencrypt
+      - /avdata/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"

@@ -7,5 +7,5 @@ dependencies = [
     "fastapi>=0.95.0",
     "uvicorn[standard]>=0.22.0",
     "sqlmodel>=0.0.8",
-    "mysql-connector-python>=8.0.0"
+    "MARIADB-connector-python>=8.0.0"
 ]

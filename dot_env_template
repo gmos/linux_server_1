@@ -1,0 +1,17 @@
+# MARIADB Root Password set upon database creation
+MARIADB_ROOT_PASSWORD=westmalle!
+
+MARIADB_USER=joena
+MARIADB_PASSWORD=westmalle
+MARIADB_DATABASE=MARIADB://joena:joena@localhost/dbname 
+
+DATABASE_URL=MARIADB://joena:westmalle@db/dbname
+SECRET_KEY=opAj3eoc-19r30
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+EMAIL_USER=j.wolf@hva.nl
+EMAIL_PASSWORD=your_email_password
+
+CERTBOT_EMAIL=j.wolf@hva.nl
+CERTBOT_DOMAINS=iot.avdienst.nl
+CERTBOT_STAGING=true

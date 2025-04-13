@@ -3,22 +3,34 @@ services:
     build:
       context: .
       dockerfile: ./docker/app/Dockerfile
-    volumes:
-      - /avdata/app:/app_data
     environment:
       - DATABASE_URL=${DATABASE_URL}
     depends_on:
       - db
+    user: "${UID}:${GID}"
+    restart: unless-stopped
 
   db:
-    image: mariadb:latest
+    build:
+      context: ./docker/db
+      dockerfile: Dockerfile
     environment:
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MARIADB_INIT=${MARIADB_INIT}
     volumes:
-      - /avdata/mysql:/var/lib/mysql
+      - /home/wams/wams_data/mariadb/var_lib_mariadb:/var/lib/mariadb
+    restart: unless-stopped
+
+  pma:
+    image: phpmyadmin:latest
+    environment:
+      - PMA_HOST=db
+      # - PMA_USER=root
+      # - PMA_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - PMA_ABSOLUTE_URI=https://iot.avdienst.nl/pma/
+    depends_on:
+      - db
+    restart: unless-stopped
 
   nginx:
     build:
@@ -29,17 +41,51 @@ services:
       - "443:443"
     depends_on:
       - app
+    #user: "${UID}:${GID}"
     volumes:
-      - /avdata/nginx/conf:/etc/nginx/conf.d
-      - /avdata/certbot/conf:/etc/letsencrypt
-      - /avdata/certbot/www:/var/www/certbot
+      #- /home/wams/wams_data/nginx/etc_nginx:/etc/nginx/
+      - /home/wams/wams_data/certbot/etc_letsencrypt:/etc/letsencrypt
+      - /home/wams/wams_data/certbot/www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do nginx -g \"daemon off;\"; sleep 12h && nginx -s reload; done;'"
+    restart: unless-stopped
+    networks:
+      - default
 
   certbot:
+    # This service is used to renew the certificates.  It runs every 24 hours.
+    # It uses the webroot plugin to renew the certificates.  It needs to be run
+    # in the same network as the nginx service, so it can access the webroot.
+    # Since this service only renews existing certificate it relies on the
+    # certbot-new service to create the first certificate.
     build:
       context: ./docker/certbot
       dockerfile: Dockerfile
     volumes:
-      - /avdata/certbot/conf:/etc/letsencrypt
-      - /avdata/certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+      - /home/wams/wams_data/certbot/etc_letsencrypt:/etc/letsencrypt
+      - /home/wams/wams_data/certbot/www:/var/www/certbot
+    depends_on:
+      - nginx
+    user: "${UID}:${GID}"
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 24h & wait $${!}; done;'"
+    restart: unless-stopped
+
+  certbot-new:
+    # Special service to create the first certificate.  Run this container ONCE on initial server set-up
+    # or when domain changes need a new certificate.
+    # This service will remove all existing certificates before creating a new one:
+    # Port 80 must be free, so shutwown nginx before running this service.
+    # Run as:
+    #    docker-compose -profile install run --rm certbot-new  
+    profiles:
+      - install
+    environment:
+      - CERTBOT_EMAIL=${CERTBOT_EMAIL}
+      - CERTBOT_DOMAINS=${CERTBOT_DOMAINS}
+      - CERTBOT_STAGING=${CERTBOT_STAGING}
+    volumes:
+      - /home/wams/wams_data/certbot/etc_letsencrypt:/etc/letsencrypt
+      - /home/wams/wams_data/certbot/www:/var/www/certbot
+    network_mode: host
+    user: "${UID}:${GID}"
+    entrypoint: "/bin/sh -x -c 'rm -rf /etc/letsencrypt/* && certbot certonly -v --standalone --non-interactive --agree-tos --email $CERTBOT_EMAIL --domains $CERTBOT_DOMAINS $( [ \"$CERTBOT_STAGING\" = \"true\" ] && echo \"--staging\" ) && exit'"
+    restart: no

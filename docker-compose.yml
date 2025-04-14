@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: ./docker/app/Dockerfile
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      - APP_DB_URL=${APP_DB_URL}
     depends_on:
       - db
     user: "${UID}:${GID}"
@@ -18,7 +18,7 @@ services:
       - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
       - MARIADB_INIT=${MARIADB_INIT}
     volumes:
-      - /home/wams/wams_data/mariadb/var_lib_mariadb:/var/lib/mariadb
+      - /home/wams/wams_data/mariadb/var_lib_mariadb:/var/lib/mysql
     restart: unless-stopped
 
   pma:
@@ -39,11 +39,11 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8123:8123"
     depends_on:
-      - app
-    #user: "${UID}:${GID}"
+      - pma
+      - php
     volumes:
-      #- /home/wams/wams_data/nginx/etc_nginx:/etc/nginx/
       - /home/wams/wams_data/certbot/etc_letsencrypt:/etc/letsencrypt
       - /home/wams/wams_data/certbot/www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do nginx -g \"daemon off;\"; sleep 12h && nginx -s reload; done;'"
@@ -67,6 +67,16 @@ services:
       - nginx
     user: "${UID}:${GID}"
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 24h & wait $${!}; done;'"
+    restart: unless-stopped
+
+  php:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    volumes:
+      - /home/wams/wams_data/php:/var/www/html
+    depends_on:
+      - db
     restart: unless-stopped
 
   certbot-new:

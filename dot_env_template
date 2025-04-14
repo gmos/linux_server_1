@@ -1,17 +1,18 @@
-# MARIADB Root Password set upon database creation
-MARIADB_ROOT_PASSWORD=westmalle!
+MARIADB_INIT=wams_site:*******:wams_site, app:westmalle:wams_app
+MARIADB_ROOT_PASSWORD=*******
 
-MARIADB_USER=joena
-MARIADB_PASSWORD=westmalle
-MARIADB_DATABASE=MARIADB://joena:joena@localhost/dbname 
+# Wams app environment
+APP_DB_URL=mariadb://app:*******@db/wams_app
 
-DATABASE_URL=MARIADB://joena:westmalle@db/dbname
-SECRET_KEY=opAj3eoc-19r30
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-EMAIL_USER=j.wolf@hva.nl
-EMAIL_PASSWORD=your_email_password
+# php site environment
+SITE_DB_URL=mariadb://wams_site:*******@db/wams_site
 
-CERTBOT_EMAIL=j.wolf@hva.nl
-CERTBOT_DOMAINS=iot.avdienst.nl
-CERTBOT_STAGING=true
+# Certbot certificate generation
+CERTBOT_EMAIL=*******@*******
+CERTBOT_DOMAINS=*******.nl
+CERTBOT_STAGING=false
+
+# Userid and group id for the containers that allow it.
+# Set for host user *******:*******
+UID=1002  
+GID=1002

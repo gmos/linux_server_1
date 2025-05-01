@@ -16,7 +16,7 @@ async def register(mac: str):
 
 @app.get("/ping", response_class=HTMLResponse)
 async def ping():
-    return "<h1>Pong from the device api.</h1>"
+    return "<h1>Pong from the device API.</h1>"
 
 
 @app.get("/joena", response_class=HTMLResponse)

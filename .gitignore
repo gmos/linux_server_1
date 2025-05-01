@@ -13,3 +13,4 @@ venv
 # Secrets and Parameters
 *.env
 *.env.*
+.env

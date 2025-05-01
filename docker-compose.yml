@@ -27,7 +27,7 @@ services:
       - PMA_HOST=db
       # - PMA_USER=root
       # - PMA_PASSWORD=${MARIADB_ROOT_PASSWORD}
-      - PMA_ABSOLUTE_URI=https://iot.avdienst.nl/pma/
+      - PMA_ABSOLUTE_URI=https://avdienst.nl/pma/
     depends_on:
       - db
     restart: unless-stopped
@@ -43,9 +43,11 @@ services:
     depends_on:
       - pma
       - php
+      - app
     volumes:
       - /home/wams/wams_data/certbot/etc_letsencrypt:/etc/letsencrypt
       - /home/wams/wams_data/certbot/www:/var/www/certbot
+      - /home/wams/wams_data/php:/var/www/php
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do nginx -g \"daemon off;\"; sleep 12h && nginx -s reload; done;'"
     restart: unless-stopped
     networks:
@@ -74,7 +76,7 @@ services:
       context: ./docker/php
       dockerfile: Dockerfile
     volumes:
-      - /home/wams/wams_data/php:/var/www/html
+      - /home/wams/wams_data/php:/var/www/php
     depends_on:
       - db
     restart: unless-stopped
@@ -85,9 +87,10 @@ services:
     # This service will remove all existing certificates before creating a new one:
     # Port 80 must be free, so shutwown nginx before running this service.
     # Run as:
-    #    docker-compose -profile install run --rm certbot-new  
+    #    docker compose --profile install run --rm certbot-new  
     profiles:
       - install
+    image: certbot/certbot
     environment:
       - CERTBOT_EMAIL=${CERTBOT_EMAIL}
       - CERTBOT_DOMAINS=${CERTBOT_DOMAINS}
@@ -96,6 +99,5 @@ services:
       - /home/wams/wams_data/certbot/etc_letsencrypt:/etc/letsencrypt
       - /home/wams/wams_data/certbot/www:/var/www/certbot
     network_mode: host
-    user: "${UID}:${GID}"
     entrypoint: "/bin/sh -x -c 'rm -rf /etc/letsencrypt/* && certbot certonly -v --standalone --non-interactive --agree-tos --email $CERTBOT_EMAIL --domains $CERTBOT_DOMAINS $( [ \"$CERTBOT_STAGING\" = \"true\" ] && echo \"--staging\" ) && exit'"
     restart: no

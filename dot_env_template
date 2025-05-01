@@ -1,4 +1,4 @@
-MARIADB_INIT=wams_site:*******:wams_site, app:westmalle:wams_app
+MARIADB_INIT=wams_site:*******:wams_site, app:********:wams_app
 MARIADB_ROOT_PASSWORD=*******
 
 # Wams app environment

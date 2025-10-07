@@ -1,35 +1,23 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: ./docker/app/Dockerfile
-    environment:
-      - APP_DB_URL=${APP_DB_URL}
-    depends_on:
-      - db
-    user: "${UID}:${GID}"
-    restart: unless-stopped
+  #app:
+  #  build:
+  #    context: .
+  #    dockerfile: ./docker/app/Dockerfile
+  #  environment:
+  #    - APP_DB_URL=${APP_DB_URL}
+  #  depends_on:
+  #    - db_1
+  #  user: "${UID}:${GID}"
+  #  restart: unless-stopped
 
-  db:
-    build:
-      context: ./docker/db
-      dockerfile: Dockerfile
+  db_1:
+    image: docker.io/postgres:17.4-alpine
     environment:
-      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
-      - MARIADB_INIT=${MARIADB_INIT}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=postgres
     volumes:
-      - /home/wams/wams_data/mariadb/var_lib_mariadb:/var/lib/mysql
-    restart: unless-stopped
-
-  pma:
-    image: phpmyadmin:latest
-    environment:
-      - PMA_HOST=db
-      # - PMA_USER=root
-      # - PMA_PASSWORD=${MARIADB_ROOT_PASSWORD}
-      - PMA_ABSOLUTE_URI=https://avdienst.nl/pma/
-    depends_on:
-      - db
+      - ${CONTAINER_DATA_ROOT}/db_1:/var/lib/postgresql/data
     restart: unless-stopped
 
   nginx:
@@ -39,15 +27,11 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8123:8123"
-    depends_on:
-      - pma
-      - php
-      - app
+#    depends_on:
+#      - app
     volumes:
-      - /home/wams/wams_data/certbot/etc_letsencrypt:/etc/letsencrypt
-      - /home/wams/wams_data/certbot/www:/var/www/certbot
-      - /home/wams/wams_data/php:/var/www/php
+      - ${CONTAINER_DATA_ROOT}/certbot/etc_letsencrypt:/etc/letsencrypt
+      - ${CONTAINER_DATA_ROOT}/certbot/www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do nginx -g \"daemon off;\"; sleep 12h && nginx -s reload; done;'"
     restart: unless-stopped
     networks:
@@ -63,26 +47,17 @@ services:
       context: ./docker/certbot
       dockerfile: Dockerfile
     volumes:
-      - /home/wams/wams_data/certbot/etc_letsencrypt:/etc/letsencrypt
-      - /home/wams/wams_data/certbot/www:/var/www/certbot
+      - ${CONTAINER_DATA_ROOT}/certbot/etc_letsencrypt:/etc/letsencrypt
+      - ${CONTAINER_DATA_ROOT}/certbot/www:/var/www/certbot
     depends_on:
       - nginx
     user: "${UID}:${GID}"
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 24h & wait $${!}; done;'"
     restart: unless-stopped
 
-  php:
-    build:
-      context: ./docker/php
-      dockerfile: Dockerfile
-    volumes:
-      - /home/wams/wams_data/php:/var/www/php
-    depends_on:
-      - db
-    restart: unless-stopped
-
   certbot-new:
-    # Special service to create the first certificate.  Run this container ONCE on initial server set-up
+    # Special service to create the first certificate.
+    # Run this container ONCE on initial server set-up
     # or when domain changes need a new certificate.
     # This service will remove all existing certificates before creating a new one:
     # Port 80 must be free, so shutwown nginx before running this service.
@@ -90,14 +65,14 @@ services:
     #    docker compose --profile install run --rm certbot-new  
     profiles:
       - install
-    image: certbot/certbot
+    image: docker.io/certbot/certbot
     environment:
       - CERTBOT_EMAIL=${CERTBOT_EMAIL}
       - CERTBOT_DOMAINS=${CERTBOT_DOMAINS}
       - CERTBOT_STAGING=${CERTBOT_STAGING}
     volumes:
-      - /home/wams/wams_data/certbot/etc_letsencrypt:/etc/letsencrypt
-      - /home/wams/wams_data/certbot/www:/var/www/certbot
+      - ${CONTAINER_DATA_ROOT}/certbot/etc_letsencrypt:/etc/letsencrypt
+      - ${CONTAINER_DATA_ROOT}/certbot/www:/var/www/certbot
     network_mode: host
     entrypoint: "/bin/sh -x -c 'rm -rf /etc/letsencrypt/* && certbot certonly -v --standalone --non-interactive --agree-tos --email $CERTBOT_EMAIL --domains $CERTBOT_DOMAINS $( [ \"$CERTBOT_STAGING\" = \"true\" ] && echo \"--staging\" ) && exit'"
     restart: no

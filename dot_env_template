@@ -1,15 +1,6 @@
-MARIADB_INIT=wams_site:*******:wams_site, app:********:wams_app
-MARIADB_ROOT_PASSWORD=*******
-
-# Wams app environment
-APP_DB_URL=mariadb://app:*******@db/wams_app
-
-# php site environment
-SITE_DB_URL=mariadb://wams_site:*******@db/wams_site
-
 # Certbot certificate generation
-CERTBOT_EMAIL=*******@*******
-CERTBOT_DOMAINS=*******.nl
+CERTBOT_EMAIL=***@***.nl
+CERTBOT_DOMAINS=***1.***.nl,***2.***.nl
 CERTBOT_STAGING=false
 
 # Userid and group id for the containers that allow it.

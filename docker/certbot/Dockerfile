@@ -1,4 +1,4 @@
-FROM certbot/certbot
+FROM docker.io/certbot/certbot
 
 COPY ./certbot/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

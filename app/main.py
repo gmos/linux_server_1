@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 
 app = FastAPI(
     title="AV Device API",
-    description="API for WAMS AV devices",
+    description="Gijs' Demo API server",
     version="1.0",
     root_path="/api",
 )

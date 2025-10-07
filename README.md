@@ -1,2 +1,2 @@
-# wams_central
-Central server code for the WAMS project
+# linux_server_1
+Repo to set-up nging, letsencrypt and a fast-api app
